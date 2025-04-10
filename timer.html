@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Church Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #1a1a1a;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .setup-container {
+            text-align: center;
+            margin-top: 5vh;
+            width: 90%;
+            max-width: 800px;
+        }
+
+        .presets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .preset-button {
+            background: #2c2c2c;
+            border: 2px solid #3c3c3c;
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .preset-button:hover {
+            background: #3c3c3c;
+            transform: translateY(-2px);
+        }
+
+        .preset-button h3 {
+            margin-bottom: 5px;
+            color: #4CAF50;
+        }
+
+        .fullscreen-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #1a1a1a;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .timer {
+            font-size: 35vw;
+            font-weight: bold;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            color: #ffffff;
+            text-shadow: 0 0 20px rgba(255,255,255,0.2);
+            width: 90vw;
+            letter-spacing: -2px;
+        }
+
+        .timer.warning {
+            color: #ff4444;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.5; }
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        input {
+            background: #333;
+            border: none;
+            padding: 15px;
+            font-size: 24px;
+            width: 100px;
+            color: white;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #4CAF50;
+            color: white;
+            min-width: 150px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        #fullscreenBtn {
+            background: #2196F3;
+        }
+
+        #backBtn {
+            background: #f44336;
+        }
+
+        .fullscreen-controls {
+            display: flex;
+            gap: 20px;
+        }
+
+        .fullscreen-controls button {
+            font-size: 20px;
+            padding: 12px 24px;
+        }
+
+        .session-name {
+            font-size: 4vw;
+            opacity: 0.7;
+            margin-bottom: -20px;
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body>
+    <!-- Setup View -->
+    <div class="setup-container" id="setupView">
+        <h1>Church Service Timer</h1>
+        <div class="presets-grid">
+            <div class="preset-button" data-id="worship">
+                <h3>Worship</h3>
+                <p>20 minutes</p>
+            </div>
+            <div class="preset-button" data-id="sermon">
+                <h3>Sermon</h3>
+                <p>45 minutes</p>
+            </div>
+            <div class="preset-button" data-id="prayer">
+                <h3>Prayer Session</h3>
+                <p>15 minutes</p>
+            </div>
+            <div class="preset-button" data-id="announcements">
+                <h3>Announcements</h3>
+                <p>10 minutes</p>
+            </div>
+            <div class="preset-button" data-id="offering">
+                <h3>Offering</h3>
+                <p>10 minutes</p>
+            </div>
+            <div class="preset-button" data-id="testimony">
+                <h3>Testimony</h3>
+                <p>15 minutes</p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <input type="number" id="minutes" min="0" max="99" placeholder="Min" value="5">
+            <input type="number" id="seconds" min="0" max="59" placeholder="Sec" value="00">
+            <button id="fullscreenBtn">Start Fullscreen</button>
+        </div>
+    </div>
+
+    <!-- Fullscreen View -->
+    <div class="fullscreen-container" id="fullscreenView">
+        <div class="session-name" id="sessionName">Custom Timer</div>
+        <div class="timer" id="timer">05:00</div>
+        <div class="fullscreen-controls">
+            <button id="backBtn">Back to Menu</button>
+        </div>
+    </div>
+
+    <script>
+        let timeLeft;
+        let timerId = null;
+        let currentSession = "custom";
+
+        const presets = {
+            worship: { name: "Worship", duration: 20 },
+            sermon: { name: "Sermon", duration: 45 },
+            prayer: { name: "Prayer Session", duration: 15 },
+            announcements: { name: "Announcements", duration: 10 },
+            offering: { name: "Offering", duration: 10 },
+            testimony: { name: "Testimony", duration: 15 },
+            custom: { name: "Custom Timer", duration: 5 }
+        };
+
+        const setupView = document.getElementById('setupView');
+        const fullscreenView = document.getElementById('fullscreenView');
+        const timerDisplay = document.getElementById('timer');
+        const sessionNameDisplay = document.getElementById('sessionName');
+        const minutesInput = document.getElementById('minutes');
+        const secondsInput = document.getElementById('seconds');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const backBtn = document.getElementById('backBtn');
+
+        // Add click handlers for preset buttons
+        document.querySelectorAll('.preset-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const presetId = button.dataset.id;
+                currentSession = presetId;
+                minutesInput.value = presets[presetId].duration;
+                secondsInput.value = '00';
+                enterFullscreen();
+            });
+        });
+
+        function updateDisplay(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function startTimer() {
+            if (timerId === null) {
+                timerId = setInterval(() => {
+                    timeLeft--;
+                    updateDisplay(timeLeft);
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(timerId);
+                        timerId = null;
+                        timerDisplay.classList.add('warning');
+                    }
+                }, 1000);
+            }
+        }
+
+        function returnToMenu() {
+            clearInterval(timerId);
+            timerId = null;
+            document.exitFullscreen();
+            setupView.style.display = 'block';
+            fullscreenView.style.display = 'none';
+            timerDisplay.classList.remove('warning');
+        }
+
+        function enterFullscreen() {
+            setupView.style.display = 'none';
+            fullscreenView.style.display = 'flex';
+            sessionNameDisplay.textContent = presets[currentSession].name;
+            
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            }
+            
+            const mins = parseInt(minutesInput.value) || 0;
+            const secs = parseInt(secondsInput.value) || 0;
+            timeLeft = (mins * 60) + secs;
+            updateDisplay(timeLeft);
+            timerDisplay.classList.remove('warning');
+            startTimer();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                returnToMenu();
+            }
+        });
+
+        fullscreenBtn.onclick = enterFullscreen;
+        backBtn.onclick = returnToMenu;
+
+        // Input validation
+        minutesInput.addEventListener('input', function() {
+            if (this.value > 99) this.value = 99;
+            if (this.value < 0) this.value = 0;
+        });
+
+        secondsInput.addEventListener('input', function() {
+            if (this.value > 59) this.value = 59;
+            if (this.value < 0) this.value = 0;
+        });
+    </script>
+</body>
+</html>

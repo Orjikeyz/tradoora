@@ -1,0 +1,225 @@
+<%- include('./layouts/header.ejs') %>
+
+<style>
+    .pending {
+        background-color: #ffa60060;
+        padding: 3px 5px;
+        border-radius: 5px;
+        margin: 5px 0;
+        color: orange;
+        font-size: 12px;
+    }
+
+    .active1 {
+        background-color: #03e18060;
+        padding: 3px 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+        color: #09a167;
+        font-size: 12px;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        width: 300px;
+        text-align: center;
+        position: fixed;
+        top: 20vh;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+
+    .close {
+        color: red;
+        float: right;
+        font-size: 28px;
+        cursor: pointer;
+    }
+
+    .close:hover {
+        color: darkred;
+    }
+
+    /* Modal Background (Hidden by Default) */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Modal Content */
+    .modal-content {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        width: 300px;
+        text-align: center;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Modal Buttons */
+    .modal-actions button {
+        margin: 10px;
+        padding: 8px 12px;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+    }
+
+    .btn-primary {
+        background: dodgerblue;
+        color: white;
+    }
+
+    .btn-danger {
+        background: rgb(244, 73, 73);
+        color: white;
+    }
+    .dataTables_empty {
+        text-align: center;
+    }
+</style>
+
+<div class="page-wrapper">
+    <div class="content">
+        <div class="page-header d-flex justify-content-between align-items-center">
+            <div class="page-title">
+                <h4>Product List</h4>
+                <h6>Manage your products</h6>
+            </div>
+            <ul class="table-top-head d-flex align-items-center">
+                <li><a data-bs-toggle="tooltip" title="PDF"><img src="/vendorAssets/images/pdf.svg" alt="PDF"></a></li>
+                <li><a data-bs-toggle="tooltip" title="Excel"><img src="/vendorAssets/images/excel.svg" alt="Excel"></a>
+                </li>
+                <li><a data-bs-toggle="tooltip" title="Print"><i data-feather="printer"></i></a></li>
+                <li><a data-bs-toggle="tooltip" title="Refresh"><i data-feather="rotate-ccw"></i></a></li>
+                <li><a data-bs-toggle="tooltip" title="Collapse" id="collapse-header"><i
+                            data-feather="chevron-up"></i></a></li>
+            </ul>
+            <div class="page-btn">
+                <a href="add-product" class="btn btn-added">
+                    <i data-feather="plus-circle" class="me-2"></i>Add New Product
+                </a>
+            </div>
+        </div>
+
+        <div class="card table-list-card">
+            <div class="card-body">
+                <div class="table-responsive product-list">
+                    <table class="table datanew">
+                        <thead>
+                            <tr>
+                                <button class="bg-danger" id="checkBoxDeleteBtn" style="margin: 5px 0; border-radius: 5px; display: none;">Delete</button>
+                                <th class="no-sort"></th>
+                                <!-- <th class="no-sort"><input type="checkbox" id="select-all" ></th> -->
+                                <th>Product</th>
+                                <th>Product ID</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Price</th>
+                                <th>Views</th>
+                                <th>Status</th>
+                                <th>Created at</th>
+                                <th class="no-sort">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% allProductItems.forEach((product, index) => { 
+                                let productImage = JSON.parse(product.image_urls);
+                            %>
+                            <tr>
+                                <td><input type="checkbox" class="checkboxBtn" value="<%= product.id%>"></td>
+                                <td>
+                                    <div class="productimgname">
+                                        <a href="javascript:void(0);"
+                                            onclick="showProductDetails(<%= JSON.stringify(product) %>)"
+                                            class="product-img stock-img">
+                                            <img src="/uploads/<%= productImage[0] %>" alt="product">
+                                        </a>
+                                        <a href="javascript:void(0);" class="productTextName"><%= product.name %></a>
+                                    </div>
+                                </td>
+                                <td>#<%= product.ref_id %></td>
+                                <td><%= product.category %></td>
+                                <td
+                                    style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden; max-width: 200px;">
+                                    <p style="margin: 0;" class="descriptionText">
+                                        <%= product.description %></p>
+                                </td>
+                                <td><%= product.currency %><%= product.price %></td>
+                                <td><%= product.view_count %></td>
+                                <td class="text-center">
+                                    <% if (product.status === "active") { %>
+                                    <span class="active1">Active</span>
+                                    <% } else { %>
+                                    <span class="pending">Pending</span>
+                                    <% } %>
+                                </td>
+                                <td><%= new Date(product.updated_at).toLocaleString() %></td>
+                                <td class="action-table-data">
+                                    <div class="edit-delete-action">
+                                        <a href="edit-product/<%= product.id%>" class="me-2 p-2">
+                                            <i data-feather="edit"></i>
+                                        </a>
+                                        <a href="#<%= product.id%>" onclick="openModal(<%= product.id%>, <%= index%>)"
+                                            class="p-2">
+                                            <i data-feather="trash-2"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal" id="customModal">
+    <div class="modal-content">
+        <h2>Are you sure?</h2>
+        <p>You won't be able to revert this!</p>
+        <div class="modal-actions">
+            <button class="btn-primary deleteItemBtn">Yes, delete it!</button>
+            <button class="btn-danger" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div id="productModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModalBtn()">Close</span>
+        <h4 id="modalProductName"></h4>
+        <img id="modalProductImage" src="" alt="Product Image" />
+        <ul id="model-image-ul" style="display: flex; margin: 0 auto; padding: 0;"></ul>
+        <p id="modelDescription" style="display: none; text-align: left; margin-top: 10px; overflow-y: scroll; height: 50vh;"></p>
+    </div>
+</div>
+
+<script src="/vendorAssets/js/product-list.js"></script>
+<%- include('./layouts/footer.ejs') %>
+</body>
+
+</html>
