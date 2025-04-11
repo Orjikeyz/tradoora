@@ -1,9 +1,9 @@
 const mysql = require("mysql")
 const connection = mysql.createConnection({
-    host: "sql301.infinityfree.com",
-    user: "if0_38721385",
-    password: "Q2U0yKPCpLzS4kg",
-    database: "if0_38721385_root22"
+    host: "mysql.gb.stackcp.com:63180",
+    user: "ordering_user",
+    password: "Support5997733",
+    database: "ordering_db-3530303381b7"
 })
 
 // const connection = mysql.createConnection({
